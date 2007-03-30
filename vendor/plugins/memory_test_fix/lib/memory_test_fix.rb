@@ -26,8 +26,8 @@ end
 
 if in_memory_database?
   load_schema = lambda {
-    load "#{RAILS_ROOT}/db/schema.rb" # use db agnostic schema by default
-    #  ActiveRecord::Migrator.up('db/migrate') # use migrations
+    #load "#{RAILS_ROOT}/db/schema.rb" # use db agnostic schema by default
+    ActiveRecord::Migrator.up('db/migrate') # use migrations
   }
   case verbosity
   when "silent"
