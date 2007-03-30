@@ -100,7 +100,7 @@ module ApplicationHelper
 
   def count_undone_todos_and_notes_phrase(project, string="actions")
     s = count_undone_todos_phrase(project, string)
-    s += ", #{pluralize(project.notes_count, 'note')}" unless project.notes_count == 0
+    s += ", #{pluralize(project.note_count, 'note')}" unless project.note_count == 0
     s
   end
   
