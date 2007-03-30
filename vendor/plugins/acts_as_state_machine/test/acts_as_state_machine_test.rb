@@ -1,6 +1,6 @@
 require File.dirname(__FILE__) + '/test_helper'
 
-include RailsStudio::Acts::StateMachine
+include ScottBarron::Acts::StateMachine
 
 class ActsAsStateMachineTest < Test::Unit::TestCase
   fixtures :conversations
@@ -48,9 +48,9 @@ class ActsAsStateMachineTest < Test::Unit::TestCase
   def test_transition_table
     tt = Conversation.transition_table
     
-    assert tt[:new_message].include?(SupportingClasses::StateTransition.new(:read, :needs_attention))
-    assert tt[:new_message].include?(SupportingClasses::StateTransition.new(:closed, :needs_attention))
-    assert tt[:new_message].include?(SupportingClasses::StateTransition.new(:awaiting_response, :needs_attention))
+    assert tt[:new_message].include?(SupportingClasses::StateTransition.new(:from => :read, :to => :needs_attention))
+    assert tt[:new_message].include?(SupportingClasses::StateTransition.new(:from => :closed, :to => :needs_attention))
+    assert tt[:new_message].include?(SupportingClasses::StateTransition.new(:from => :awaiting_response, :to => :needs_attention))
   end
 
   def test_next_state_for_event
@@ -81,24 +81,62 @@ class ActsAsStateMachineTest < Test::Unit::TestCase
     c.close!
     assert_equal :read, c.current_state
   end
-  
+
   def test_ignore_invalid_events
     c = Conversation.create
     c.view!
     c.junk!
-    
+
     # This is the invalid event
     c.new_message!
     assert_equal :junk, c.current_state
   end
-    
+
   def test_entry_action_executed
     c = Conversation.create
     c.read_enter = false
     c.view!
     assert c.read_enter
   end
-  
+
+  def test_after_actions_executed
+    c = Conversation.create
+
+    c.read_after_first = false
+    c.read_after_second = false
+    c.closed_after = false
+
+    c.view!
+    assert c.read_after_first
+    assert c.read_after_second
+
+    c.can_close = true
+    c.close!
+
+    assert c.closed_after
+    assert_equal :closed, c.current_state
+  end
+
+  def test_after_actions_not_run_on_loopback_transition
+    c = Conversation.create
+
+    c.view!
+    c.read_after_first = false
+    c.read_after_second = false
+    c.view!
+
+    assert !c.read_after_first
+    assert !c.read_after_second
+
+    c.can_close = true
+
+    c.close!
+    c.closed_after = false
+    c.close!
+
+    assert !c.closed_after
+  end
+
   def test_exit_action_executed
     c = Conversation.create
     c.read_exit = false
@@ -115,6 +153,12 @@ class ActsAsStateMachineTest < Test::Unit::TestCase
     c.view!
     assert !c.read_enter
     assert !c.read_exit
+  end
+
+  def test_entry_and_after_actions_called_for_initial_state
+    c = Conversation.create
+    assert c.needs_attention_enter
+    assert c.needs_attention_after
   end
   
   def test_run_transition_action_is_private
@@ -170,5 +214,11 @@ class ActsAsStateMachineTest < Test::Unit::TestCase
     assert_raise(InvalidState) {
       Conversation.count_in_state(:dead)
     }
+  end
+
+  def test_can_access_events_via_event_table
+    event = Conversation.event_table[:junk]
+    assert_equal :junk, event.name
+    assert_equal "finished", event.opts[:note]
   end
 end

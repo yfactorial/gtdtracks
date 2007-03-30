@@ -1,29 +1,8 @@
 # The methods added to this helper will be available to all templates in the application.
 module ApplicationHelper
-
-  # Convert a date object to the format specified
-  # in config/settings.yml
-  #
-  def format_date(date)
-    if date
-      date_format = @user.prefs.date_format
-      formatted_date = @user.prefs.tz.adjust(date).strftime("#{date_format}")
-    else
-      formatted_date = ''
-    end
-  end
   
   def user_time
-    @user.prefs.tz.adjust(Time.now.utc)
-  end
-  
-
-  # Uses RedCloth to transform text using either Textile or Markdown
-  # Need to require redcloth above
-  # RedCloth 3.0 or greater is needed to use Markdown, otherwise it only handles Textile
-  #
-  def markdown(text)
-    RedCloth.new(text).to_html
+    @user.time
   end
   
   # Replicates the link_to method but also checks request.request_uri to find
@@ -45,8 +24,7 @@ module ApplicationHelper
   end
   
   def days_from_today(date)
-    today = Time.now.utc.to_date
-    @user.prefs.tz.adjust(date).to_date - @user.prefs.tz.adjust(today).to_date
+    date.to_date - user_time.to_date
   end
   
   # Check due date in comparison to today's date
@@ -62,21 +40,21 @@ module ApplicationHelper
     case days
       # overdue or due very soon! sound the alarm!
       when -1000..-1
-        "<a title='" + format_date(due) + "'><span class=\"red\">Overdue by " + (days * -1).to_s + " days</span></a> "
+        "<a title='#{format_date(due)}'><span class=\"red\">Overdue by #{pluralize(days * -1, 'day')}</span></a> "
       when 0
-           "<a title='" + format_date(due) + "'><span class=\"amber\">Due Today</span></a> "
+           "<a title='#{format_date(due)}'><span class=\"amber\">Due Today</span></a> "
       when 1
-           "<a title='" + format_date(due) + "'><span class=\"amber\">Due Tomorrow</span></a> "
+           "<a title='#{format_date(due)}'><span class=\"amber\">Due Tomorrow</span></a> "
       # due 2-7 days away
       when 2..7
       if @user.prefs.due_style == "1"
-        "<a title='" + format_date(due) + "'><span class=\"orange\">Due on " + due.strftime("%A") + "</span></a> "
+        "<a title='#{format_date(due)}'><span class=\"orange\">Due on #{due.strftime("%A")}</span></a> "
       else
-        "<a title='" + format_date(due) + "'><span class=\"orange\">Due in " + days.to_s + " days</span></a> "
+        "<a title='#{format_date(due)}'><span class=\"orange\">Due in #{pluralize(days, 'day')}</span></a> "
       end
       # more than a week away - relax
       else
-        "<a title='" + format_date(due) + "'><span class=\"green\">Due in " + days.to_s + " days</span></a> "
+        "<a title='#{format_date(due)}'><span class=\"green\">Due in #{pluralize(days, 'day')}</span></a> "
     end
   end
 
@@ -112,20 +90,18 @@ module ApplicationHelper
   # The result is count and a string descriptor, correctly pluralised if there are no
   # actions or multiple actions
   #
-  def count_undone_todos(todos_parent, string="actions")
-    if (todos_parent.is_a?(Project) && todos_parent.hidden?)
-      count = eval "@project_project_hidden_todo_counts[#{todos_parent.id}]"
-    else
-      count = eval "@#{todos_parent.class.to_s.downcase}_not_done_counts[#{todos_parent.id}]"
-    end
-    count = 0 if count == nil
-    #count = todos_parent.todos.select{|t| !t.done }.size
-    if count == 1
-      word = string.singularize
-    else
-      word = string.pluralize
-    end
-    return count.to_s + " " + word
+  def count_undone_todos_phrase(todos_parent, string="actions")
+    @controller.count_undone_todos_phrase(todos_parent, string)
+  end
+
+  def count_undone_todos_phrase_text(todos_parent, string="actions")
+    count_undone_todos_phrase(todos_parent, string).gsub("&nbsp;"," ")
+  end
+
+  def count_undone_todos_and_notes_phrase(project, string="actions")
+    s = count_undone_todos_phrase(project, string)
+    s += ", #{pluralize(project.note_count, 'note')}" unless project.note_count == 0
+    s
   end
   
   def link_to_context(context, descriptor = sanitize(context.name))

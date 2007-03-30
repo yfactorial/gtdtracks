@@ -1,18 +1,24 @@
 class ContextsController < ApplicationController
 
-  helper :todo
+  helper :todos
 
   before_filter :init, :except => [:create, :destroy, :order]
   before_filter :init_todos, :only => :show
+  before_filter :set_context_from_params, :only => [:update, :destroy]
+  skip_before_filter :login_required, :only => [:index]
+  prepend_before_filter :login_or_feed_token_required, :only => [:index]
+  session :off, :only => :index, :if => Proc.new { |req| ['rss','atom','txt'].include?(req.parameters[:format]) }
 
   def index
-    @page_title = "TRACKS::List Contexts"
-    respond_to do |wants|
-      wants.html
-      wants.xml { render :xml => @contexts.to_xml( :except => :user_id ) }
+    respond_to do |format|
+      format.html &render_contexts_html
+      format.xml  { render :xml => @contexts.to_xml( :except => :user_id ) }
+      format.rss  &render_contexts_rss_feed
+      format.atom &render_contexts_atom_feed
+      format.text { render :action => 'index_text', :layout => false, :content_type => Mime::TEXT }
     end
   end
-
+  
   def show
     @page_title = "TRACKS::Context: #{@context.name}"
   end
@@ -52,7 +58,6 @@ class ContextsController < ApplicationController
   # Edit the details of the context
   #
   def update
-    check_user_set_context
     params['context'] ||= {}
     success_text = if params['field'] == 'name' && params['value']
       params['context']['id'] = params['id'] 
@@ -75,12 +80,10 @@ class ContextsController < ApplicationController
   # If the context contains actions, you'll get a warning dialogue.
   # If you choose to go ahead, any actions in the context will also be deleted.
   def destroy
-    check_user_set_context
-    if @context.destroy
-      render_text ""
-    else
-      notify :warning, "Couldn't delete context \"#{@context.name}\""
-      redirect_to :action => 'index'
+    @context.destroy
+    respond_to do |format|
+      format.js
+      format.xml { render :text => "Deleted context #{@context.name}" }
     end
   end
 
@@ -88,53 +91,38 @@ class ContextsController < ApplicationController
   #
   def order
     params["list-contexts"].each_with_index do |id, position|
-      if check_user_matches_context_user(id)
-        Context.update(id, :position => position + 1)
-      end
+      @user.contexts.update(id, :position => position + 1)
     end
     render :nothing => true
   end
   
   protected
 
-    def check_user_set_context
-      if params['url_friendly_name']
-        @context = @user.contexts.find_by_url_friendly_name(params['url_friendly_name'])
-      elsif params['id'] && params['id'] =~ /\d+/
-        @context = @user.contexts.find(params['id'])
-      elsif params['id']
-        @context = @user.contexts.find_by_url_friendly_name(params['id'])
-      else
-        redirect_to :action => 'index'
-      end
-      if @context && @user == @context.user
-        return @context
-      else
-        @context = nil # Should be nil anyway.
-        notify :warning, "Item and session user mis-match: #{@context.user_id} and #{@user.id}!"
-        render :text => ''
+    def render_contexts_html
+      lambda do
+        @page_title = "TRACKS::List Contexts"
+        @no_contexts = @contexts.empty?
+        render
       end
     end
 
-    def check_user_matches_context_user(id)
-       @context = Context.find_by_id_and_user_id(id, @user.id)
-       if @user == @context.user
-         return @context
-       else
-         @context = nil
-         notify :warning, "Project and session user mis-match: #{@context.user_id} and #{@user.id}!"
-         render :text => ''
-       end
-    end
-    
-    def check_user_return_item
-      item = Todo.find( params['id'] )
-      if @user == item.user
-        return item
-      else
-        notify :warning, "Item and session user mis-match: #{item.user.name} and #{@user.name}!"
-        render :text => ''
+    def render_contexts_rss_feed
+      lambda do
+        render_rss_feed_for @contexts, :feed => Context.feed_options(@user),
+                                       :item => { :description => lambda { |c| c.summary(count_undone_todos_phrase(c)) } }
       end
+    end
+
+    def render_contexts_atom_feed
+      lambda do
+        render_atom_feed_for @contexts, :feed => Context.feed_options(@user),
+                                        :item => { :description => lambda { |c| c.summary(count_undone_todos_phrase(c)) },
+                                                   :author => lambda { |c| nil } }
+      end
+    end
+
+    def set_context_from_params
+      @context = @user.contexts.find_by_params(params)
     end
      
     def init
@@ -148,7 +136,7 @@ class ContextsController < ApplicationController
     end
 
     def init_todos
-      check_user_set_context
+      set_context_from_params
       @done = @context.done_todos
       # @not_done_todos = @context.not_done_todos
       # TODO: Temporarily doing this search manually until I can work out a way
@@ -156,6 +144,7 @@ class ContextsController < ApplicationController
       # Hides actions in hidden projects from context.
       @not_done_todos = @context.todos.find(:all, :conditions => ['todos.state = ?', 'active'], :order => "todos.due IS NULL, todos.due ASC, todos.created_at ASC", :include => :project)
       @count = @not_done_todos.size
+      @default_project_context_name_map = build_default_project_context_name_map(@projects).to_json
     end
 
 end

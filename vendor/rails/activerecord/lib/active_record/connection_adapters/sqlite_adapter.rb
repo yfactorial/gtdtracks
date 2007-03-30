@@ -22,7 +22,7 @@ module ActiveRecord
 
         db.busy_timeout(config[:timeout]) unless config[:timeout].nil?
 
-        ConnectionAdapters::SQLiteAdapter.new(db, logger)
+        ConnectionAdapters::SQLite3Adapter.new(db, logger)
       end
 
       # Establishes a connection to the database that's used by all Active Record objects
@@ -102,7 +102,7 @@ module ActiveRecord
         true
       end
 
-      def supports_reloading?
+      def requires_reloading?
         true
       end
       
@@ -254,10 +254,11 @@ module ActiveRecord
 
       def change_column(table_name, column_name, type, options = {}) #:nodoc:
         alter_table(table_name) do |definition|
+          include_default = options_include_default?(options)
           definition[column_name].instance_eval do
             self.type    = type
-            self.limit   = options[:limit] if options[:limit]
-            self.default = options[:default] unless options[:default].nil?
+            self.limit   = options[:limit] if options.include?(:limit)
+            self.default = options[:default] if include_default
           end
         end
       end
@@ -353,6 +354,14 @@ module ActiveRecord
         end
     end
     
+    class SQLite3Adapter < SQLiteAdapter # :nodoc:
+      def table_structure(table_name)
+        returning structure = @connection.table_info(table_name) do
+          raise ActiveRecord::StatementInvalid if structure.empty?
+        end
+      end
+    end
+
     class SQLite2Adapter < SQLiteAdapter # :nodoc:
       # SQLite 2 does not support COUNT(DISTINCT) queries:
       #

@@ -4,6 +4,7 @@ admin_user_prefs:
   user_id: 1
   staleness_starts: 7
   date_format: "%d/%m/%Y"
+  title_date_format: "%A, %d %B %Y"
   show_number_completed: 5
   show_completed_projects_in_sidebar: true
   show_hidden_contexts_in_sidebar: true
@@ -14,12 +15,14 @@ admin_user_prefs:
   refresh: 0
   time_zone: "London"
   verbose_action_descriptors: true
+  show_project_on_todo_done: false
 
 other_user_prefs:
   id: 2
   user_id: 2
   staleness_starts: 7
   date_format: "%d/%m/%Y"
+  title_date_format: "%A, %d %B %Y"
   show_number_completed: 5
   show_completed_projects_in_sidebar: true
   show_hidden_contexts_in_sidebar: true
@@ -30,3 +33,4 @@ other_user_prefs:
   refresh: 0
   time_zone: "London"
   verbose_action_descriptors: false
+  show_project_on_todo_done: true

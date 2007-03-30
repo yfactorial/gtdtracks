@@ -1,5 +1,71 @@
-*1.13.0 RC2* (r5847, January 4th, 2007)
+*1.13.3* (March 12th, 2007)
 
+* Apply [5709] to stable.
+
+* session_enabled? works with session :off.  #6680 [Catfish]
+
+* Performance: patch cgi/session to require digest/md5 once rather than per #create_new_id.  [Stefan Kaes]
+
+
+*1.13.2* (February 5th, 2007)
+
+* Add much-needed html-scanner tests.  Fixed CDATA parsing bug. [Rick]
+
+* improve error message for Routing for named routes. [Rob Sanheim]
+
+* Added enhanced docs to routing assertions. [Rob Sanheim]
+
+* fix form_for example in ActionController::Resources documentation. [gnarg]
+
+* Add singleton resources from trunk [Rick Olson]
+
+* select :multiple => true suffixes the attribute name with [] unless already suffixed.  #6977 [nik.kakelin, ben, julik]
+
+* Improve routes documentation.  #7095 [zackchandler]
+
+* Resource member routes require :id, eliminating the ambiguous overlap with collection routes.  #7229 [dkubb]
+
+* Fixed NumberHelper#number_with_delimiter to use "." always for splitting the original number, not the delimiter parameter #7389 [ceefour]
+
+* Autolinking recognizes trailing and embedded . , : ;  #7354 [Jarkko Laine]
+
+* Make TextHelper::auto_link recognize URLs with colons in path correctly, fixes #7268.  [imajes]
+
+* Improved auto_link to match more valid urls correctly [Tobias Luetke]
+
+
+*1.13.1* (January 18th, 2007)
+
+* Fixed content-type bug in Prototype [sam]
+
+
+*1.13.0* (January 16th, 2007)
+
+* Modernize cookie testing code, and increase coverage (Heckle++) #7101 [Kevin Clark]
+
+* Heckling ActionController::Resources::Resource revealed that set_prefixes didn't break when :name_prefix was munged. #7081 [Kevin Clark]
+
+* Update to Prototype 1.5.0. [Sam Stephenson]
+
+* Allow exempt_from_layout :rhtml.  #6742, #7026 [dcmanges, Squeegy]
+
+* Fix parsing of array[] CGI parameters so extra empty values aren't included.  #6252 [Nicholas Seckar, aiwilliams, brentrowland]
+
+* link_to_unless_current works with full URLs as well as paths.  #6891 [Jarkko Laine, manfred, idrifter]
+
+* Fix HTML::Node to output double quotes instead of single quotes.  Closes #6845 [mitreandy]
+
+* Fix no method error with error_messages_on.  Closes #6935 [nik.wakelin Koz]
+
+* Slight doc tweak to the ActionView::Helpers::PrototypeHelper#replace docs.  Closes #6922 [Steven Bristol]
+
+* Slight doc tweak to #prepend_filter.  Closes #6493 [Jeremy Voorhis]
+
+* Add more extensive documentation to the AssetTagHelper.  Closes #6452 [Bob Silva]
+
+* Clean up multiple calls to #stringify_keys in TagHelper, add better documentation and testing for TagHelper.  Closes #6394 [Bob Silva]
+
+* [DOCS] fix reference to ActionController::Macros::AutoComplete for #text_field_with_auto_complete. Closes #2578 [Jan Prill]
 
 * Make sure html_document is reset between integration test requests. [ctm]
 

@@ -1,5 +1,5 @@
 setup :fixtures => :all
-include_partial 'login/login', :username => 'admin', :password => 'abracadabra'
+login :as => 'admin'
 open "/projects/Build_a_working_time_machine"
 click "edit_icon_todo_5"
 wait_for_element_present "show_from_todo_5"
@@ -7,3 +7,4 @@ type "show_from_todo_5", "1/1/2030"
 click "//input[@value='Update']"
 wait_for_element_present "xpath=//div[@id='tickler'] //div[@id='todo_5']"
 assert_not_visible "tickler-empty-nd"
+assert_text 'badge_count', '1'

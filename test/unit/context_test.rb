@@ -6,6 +6,7 @@ class ContextTest < Test::Unit::TestCase
   def setup
     @agenda = contexts(:agenda)
     @email = contexts(:email)
+    @library = contexts(:library)
   end
 
   def test_validate_presence_of_name
@@ -107,6 +108,31 @@ class ContextTest < Test::Unit::TestCase
   def test_to_param_returns_url_friendly_name
     assert_equal 'agenda', @agenda.to_param
   end
-  
-  
+    
+  def test_title_reader_returns_name
+    assert_equal @agenda.name, @agenda.title
+  end
+
+  def test_feed_options
+    opts = Context.feed_options(users(:admin_user))
+    assert_equal 'Tracks Contexts', opts[:title], 'Unexpected value for :title key of feed_options'
+    assert_equal 'Lists all the contexts for Admin Schmadmin', opts[:description], 'Unexpected value for :description key of feed_options'
+  end
+
+  def test_hidden_attr_reader
+    assert !@agenda.hidden?
+    @agenda.hide = true
+    @agenda.save!
+    @agenda.reload
+    assert_equal true, @agenda.hidden?
+  end
+
+  def test_summary
+    undone_todo_count = '5 actions'
+    assert_equal "<p>#{undone_todo_count}. Context is Active.</p>", @agenda.summary(undone_todo_count)
+    @agenda.hide = true
+    @agenda.save!
+    assert_equal "<p>#{undone_todo_count}. Context is Hidden.</p>", @agenda.summary(undone_todo_count)
+  end
+
 end

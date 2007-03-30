@@ -45,9 +45,8 @@ a.down:hover {background: transparent url(../images/down_on.png) no-repeat;}
 a.to_bottom {background: transparent url(../images/bottom_off.png) no-repeat;}
 a.to_bottom:hover {background: transparent url(../images/bottom_on.png) no-repeat;}
 
-a.show_notes {background-image: url(../images/notes_off.png); background-repeat: no-repeat; padding: 1px; background-color: transparent;}
-a.show_notes:hover {background-image: url(../images/notes_on.png); background-repeat: no-repeat; padding: 1px; background-color: transparent;}
-
+a.show_notes, a.link_to_notes {background-image: url(../images/notes_off.png); background-repeat: no-repeat; padding: 1px; background-color: transparent;}
+a.show_notes:hover, a.link_to_notes:hover {background-image: url(../images/notes_on.png); background-repeat: no-repeat; padding: 1px; background-color: transparent;}
 
 /* Structural divs */
 
@@ -192,7 +191,7 @@ div#input_box {
       margin: 0% 5% 0% 60%;
       padding: 0px 15px 0px 0px;
       }
-      
+
 #input_box h2 {
       color: #999;
       
@@ -268,7 +267,7 @@ input.item-checkbox {
       font-size: 12px;
       }
       
-.notes ul {
+.notes ul, .note_wrapper ul {
       list-style-type: disc;
 }
 
@@ -313,6 +312,10 @@ div#project_status > div {
 }
 #project_status .active_state {
 	font-weight:bold;
+}
+
+div#default_context > div{
+	padding:10px;
 }
 a.footer_link {color: #cc3334; font-style: normal;}
 a.footer_link:hover {color: #fff; background-color: #cc3334 !important;}
@@ -473,17 +476,12 @@ li {
 #sidebar li {
       padding: auto;
       }
-.even_row {
+.sortable_row {
       background: #fff;
       _background: transparent;
-      padding: 5px 5px 5px 10px;
+      padding: 4px 4px 4px 8px;
       margin: 2px 2px;
       border: 1px solid #ccc;
-      }
-
-.odd_row {
-      background: #EDF3FE;
-      padding: 5px 5px 5px 10px;
       }
 
 .edit-form {
@@ -527,7 +525,7 @@ div.buttons, div.buttons a, div.buttons a:hover {
     background-color: transparent;
     }
 
-div#list-projects, div#list-contexts {
+div#list-active-projects, div#list-hidden-projects, div#list-completed-projects, div#list-contexts, div#projects-empty-nd {
     border: 1px solid #999;
     }
     
@@ -554,13 +552,15 @@ div.project_description {
        shadowed text */
     /* text-shadow: rgba(0,0,0,.4) 0px 2px 5px; */
     }
+#project-next-prev {
+  text-align:right;
+}
     
 /* Form elements */
 form {
     border: 1px solid #CCC;
     padding: 10px;
     margin: 0px;
-    width: 313px;
     }
 .inline-form {
     border: none;

@@ -1,26 +1,6 @@
 ActionController::Routing::Routes.draw do |map|
-  # Add your own custom routes here.
-  # The priority is based upon order of creation: first created -> highest priority.
+  UJS::routes
   
-  # Here's a sample route:
-  # map.connect 'products/:id', :controller => 'catalog', :action => 'view'
-  # Keep in mind you can assign values other than :controller and :action
-
-  # You can have the root of your site routed by hooking up '' 
-  # -- just remember to delete public/index.html.
-  # map.connect '', :controller => "welcome"
-
-  # Allow downloading Web Service WSDL as a file with an extension
-  # instead of a file named 'wsdl'
-  #map.connect ':controller/service.wsdl', :action => 'wsdl'
-  
-  # Index Route
-  map.connect '', :controller => 'todo', :action => 'index'
-  
-  # Admin Routes
-  map.connect 'admin', :controller => 'admin', :action => 'index'
-  map.connect 'admin/destroy/:id', :controller => 'admin', :action => 'destroy', :requirements => {:id => /\d+/}
-
   # Mobile/lite version
   map.connect 'mobile', :controller => 'mobile', :action => 'index'
   map.connect 'mobile/add_action', :controller => 'mobile', :action => 'show_add_form'
@@ -28,31 +8,42 @@ ActionController::Routing::Routes.draw do |map|
   # Login Routes
   map.connect 'login', :controller => 'login', :action => 'login' 
   map.connect 'logout', :controller => 'login', :action => 'logout'
-  map.connect 'signup', :controller => 'login', :action => 'signup'
 
-  # ToDo Routes
-  map.connect 'done', :controller => 'todo', :action => 'completed'
-  map.connect 'tickler', :controller => 'todo', :action => 'tickler'
+  map.resources :users,
+                :member => {:change_password => :get, :update_password => :post,
+                             :change_auth_type => :get, :update_auth_type => :post, :complete => :get,
+                             :refresh_token => :post }
+ map.with_options :controller => "users" do |users|
+   users.signup 'signup', :action => "new"
+ end
 
   # Context Routes
-  map.resources :contexts, :collection => {:order => :post} 
-  map.connect 'context/:context/feed/:action/:login/:token', :controller => 'feed'
-  map.connect 'contexts/feed/:feedtype/:login/:token', :controller => 'feed', :action => 'list_contexts_only'
+  map.resources :contexts, :collection => {:order => :post} do |contexts|
+    contexts.resources :todos
+  end
 
   # Projects Routes
-  map.resources :projects, :collection => {:order => :post} 
-  map.connect 'project/:project/feed/:action/:login/:token', :controller => 'feed'
-  map.connect 'projects/feed/:feedtype/:login/:token', :controller => 'feed', :action => 'list_projects_only'
+  map.resources :projects, :collection => {:order => :post} do |projects|
+    projects.resources :todos
+  end
 
+    # ToDo Routes
+  map.resources :todos,
+                :member => {:toggle_check => :post},
+                :collection => {:check_deferred => :post}
+  map.with_options :controller => "todos" do |todos|
+    todos.home '', :action => "index"
+    todos.tickler 'tickler', :action => "list_deferred"
+    todos.done 'done', :action => "completed"
+    todos.done_archive 'done/archive', :action => "completed_archive"
+    todos.tag 'todos/tag/:name', :action => "tag"
+  end
+  
   # Notes Routes
-  map.connect 'note/add', :controller => 'note', :action => 'add'
-  map.connect 'note/update/:id', :controller => 'note', :action => 'update', :id => 'id'
-  map.connect 'note/:id', :controller => 'note', :action => 'show', :id => 'id'
-  map.connect 'notes', :controller => 'note', :action => 'index'
+  map.resources :notes
 
   # Feed Routes
   map.connect 'feeds', :controller => 'feedlist', :action => 'index'
-  map.connect 'feed/:action/:login/:token', :controller => 'feed'
 
   # Install the default route as the lowest priority.
   map.connect ':controller/:action/:id'

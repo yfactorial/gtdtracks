@@ -1,6 +1,7 @@
 class Project < ActiveRecord::Base
   has_many :todos, :dependent => :delete_all, :include => :context
   has_many :notes, :dependent => :delete_all, :order => "created_at DESC"
+  belongs_to :default_context, :dependent => :nullify, :class_name => "Context", :foreign_key => "default_context_id"
   belongs_to :user
   
   validates_presence_of :name, :message => "project must have a name"
@@ -9,7 +10,7 @@ class Project < ActiveRecord::Base
   validates_does_not_contain :name, :string => '/', :message => "cannot contain the slash ('/') character"
   validates_does_not_contain :name, :string => ',', :message => "cannot contain the comma (',') character"
 
-  acts_as_list :scope => :user
+  acts_as_list :scope => 'user_id = #{user_id} AND state = \'#{state}\''
   acts_as_state_machine :initial => :active, :column => 'state'
   extend NamePartFinder
   include Tracks::TodoList
@@ -32,37 +33,53 @@ class Project < ActiveRecord::Base
   end
   
   attr_protected :user
+  attr_accessor :cached_note_count
 
   def self.null_object
     NullProject.new
   end
   
+  def self.feed_options(user)
+    {
+      :title => 'Tracks Projects',
+      :description => "Lists all the projects for #{user.display_name}"
+    }
+  end
+  
   def to_param
     url_friendly_name
-  end
-  
-  def description_present?
-    attribute_present?("description")
-  end
-  
-  def linkurl_present?
-    attribute_present?("linkurl")
   end
     
   def hide_todos
     todos.each do |t|
-      t.hide! unless t.completed? || t.deferred?
-      t.save
+      unless t.completed? || t.deferred?
+        t.hide!
+        t.save
+      end
     end
   end
       
   def unhide_todos
     todos.each do |t|
-      t.unhide! if t.project_hidden?
-      t.save
+      if t.project_hidden?
+        t.unhide!
+        t.save
+      end
     end
   end
   
+  def note_count
+    cached_note_count || notes.count
+  end
+  
+  alias_method :original_default_context, :default_context
+
+  def default_context
+    original_default_context.nil? ? Context.null_object : original_default_context
+  end
+  
+  # would prefer to call this method state=(), but that causes an endless loop
+  # as a result of acts_as_state_machine calling state=() to update the attribute
   def transition_to(candidate_state)
     case candidate_state.to_sym
       when current_state
@@ -88,4 +105,8 @@ class NullProject
     true
   end
   
+  def id
+    nil
+  end
+    
 end

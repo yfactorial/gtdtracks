@@ -7,7 +7,7 @@
     <% end -%>
   <%= stylesheet_link_tag "standard" %>
   <%= stylesheet_link_tag "print", :media => "print" %>
-  <%= javascript_include_tag :defaults %>
+  <%= javascript_include_tag :defaults, :unobtrusive %>
   <%= javascript_include_tag "selector-addon-v1" %>
   <%= stylesheet_link_tag 'calendar-system.css' %>
   <%= javascript_include_tag 'calendar', 'calendar-en', 'calendar-setup' %>
@@ -27,7 +27,7 @@
   <% if @count %>
     <span id="badge_count" class="badge"><%= @count %></span>
   <% end %>
-  <%= user_time.strftime("%A, %d %B %Y") %> <%= image_tag("spinner.gif", :size => "16X16", :border => 0, :id => 'busy', :style => 'display:none' ) %>
+  <%= user_time.strftime(@prefs.title_date_format) %> <%= image_tag("spinner.gif", :size => "16X16", :border => 0, :id => 'busy', :style => 'display:none' ) %>
   </h1>
 </div>
 <div id="minilinks">
@@ -40,16 +40,16 @@
 
 <div id="navcontainer">
 <ul id="navlist">
-  <li><%= navigation_link("Home", {:controller => "todo", :action => "index"}, {:accesskey => "t", :title => "Home"} ) %></li>
+  <li><%= navigation_link("Home", home_path, {:accesskey => "t", :title => "Home"} ) %></li>
   <li><%= navigation_link( "Contexts", contexts_path, {:accesskey=>"c", :title=>"Contexts"} ) %></li>
   <li><%= navigation_link( "Projects", projects_path, {:accesskey=>"p", :title=>"Projects"} ) %></li>
-  <li><%= navigation_link( "Tickler", {:controller => "todo", :action => "tickler"}, :title => "Tickler" ) %></li>
-  <li><%= navigation_link( "Done", {:controller => "todo", :action => "completed"}, {:accesskey=>"d", :title=>"Completed"} ) %></li>
-  <li><%= navigation_link( "Notes", {:controller => "note", :action => "index"}, {:accesskey => "o", :title => "Show all notes"} ) %></li>
+  <li><%= navigation_link( "Tickler", tickler_path, :title => "Tickler" ) %></li>
+  <li><%= navigation_link( "Done", done_path, {:accesskey=>"d", :title=>"Completed"} ) %></li>
+  <li><%= navigation_link( "Notes", notes_path, {:accesskey => "o", :title => "Show all notes"} ) %></li>
   <li><%= navigation_link( "Preferences", {:controller => "preferences", :action => "index"}, {:accesskey => "u", :title => "Show my preferences"} ) %></li>
   <li><%= navigation_link( "Import/Export", {:controller => "data", :action => "index"}, {:accesskey => "i", :title => "Import and export data"} ) %></li>
   <% if @user.is_admin? -%>
-    <li><%= navigation_link("Admin", {:controller => "admin", :action => "index"}, {:accesskey => "a", :title => "Add or delete users"} ) %></li>
+    <li><%= navigation_link("Admin", users_path, {:accesskey => "a", :title => "Add or delete users"} ) %></li>
   <% end -%>
   <li><%= navigation_link(image_tag("feed-icon.png", :size => "16X16", :border => 0), {:controller => "feedlist", :action => "index"}, :title => "See a list of available feeds" ) %></li>
 </ul>
@@ -64,13 +64,12 @@
 <%= periodically_call_remote( :url => {:controller => "login", :action => "check_expiry"},
                               :frequency => (5*60)) %>
 <% end -%>
-<%= periodically_call_remote( :url => {:controller => "todo", :action => "check_tickler"},
+<%= periodically_call_remote( :url => formatted_check_deferred_todos_path(:js),
+                              :method => :post,
                               :frequency => (10*60)) %>  
 <%= yield %>
 </div>
 
-<div id="footer">
-  <p>Send feedback: <a href="http://dev.rousette.org.uk/report/6">Trac</a> | <a href="http://www.rousette.org.uk/projects/forums/">Forum</a> | <a href="http://www.rousette.org.uk/projects/wiki/index">Wiki</a> | <a href="mailto:butshesagirl@rousette.org.uk?subject=Tracks feedback">Email</a> | <a href="http://www.rousette.org.uk/projects/">Website</a></p>
-</div>
+<%= render :partial => "shared/footer" %>
 </body>
 </html>
